@@ -166,7 +166,61 @@ Two things worth knowing before anyone writes the pi-ai provider:
   confirmed present. Attribution headers therefore belong on the model entries,
   or the upstream merge needs fixing first.
 
-## 5. Verification notes
+## 5. Connecting aimlapi.com to current Letta today
+
+*(Fork-only section. It is promotional in intent and there is no upstream
+surface to attach it to — drop this section, and the commit that adds it,
+before any conversation with the Letta maintainers.)*
+
+No pull request and no new provider code are needed to use **aimlapi.com** with
+current Letta. Letta Code already ships an `openai-compatible` BYOK entry
+(`src/providers/byok-providers.ts:140-153` for cloud, `:297-309` for local),
+and our endpoint is OpenAI-compatible:
+
+| Field | Value |
+| --- | --- |
+| Provider | **aimlapi.com** |
+| Base URL | `https://api.aimlapi.com/v1` |
+| Endpoint | `POST /v1/chat/completions` |
+| API key env var | `AIMLAPI_API_KEY` |
+| Catalog | `GET https://api.aimlapi.com/v1/models?include=all` |
+
+```
+letta
+/provider   ->  OpenAI-compatible API
+  API Key   ->  <your aimlapi.com key>
+  Base URL  ->  https://api.aimlapi.com/v1
+```
+
+Model ids are the catalog's own, e.g. `openai/gpt-5-5`,
+`anthropic/claude-sonnet-4.6`, `google/gemini-2.5-flash`, `openai/gpt-4o-mini`
+— all four verified live, chat and tool calling, in §4 above.
+
+Two endpoint caveats worth carrying into any future provider entry:
+
+- Declare the **chat completions** path. `POST /v1/completions` does not exist
+  and returns 404.
+- `POST /v1/responses` exists but serves only a minority of the chat catalog;
+  the other ids 404 there while working on `/v1/chat/completions`. Anything
+  built on a runtime that defaults to Responses must be pinned to the chat form.
+
+### Attribution headers — deliberately not configured here
+
+Our four attribution headers (`X-AIMLAPI-Partner-ID`, `X-AIMLAPI-Source`,
+`HTTP-Referer`, `X-Title`) are **not** set up in this document and no partner id
+is recorded. That is intentional on both counts:
+
+- This repository sends no requests, so there is nothing to attach a header to.
+- No partner id has been registered for a Letta surface, and inventing one is
+  worse than omitting it: a value that does not match
+  `^part_[A-Za-z0-9]{1,64}$` is dropped silently at our gateway and earns
+  nothing, while looking correct in review.
+
+When a real provider entry is written against `earendil-works/pi-ai`, the
+headers go on the **model** entries, not on `createProvider({ headers })` — see
+the pi-ai finding in §4 — and a test should assert the id against that regex.
+
+## 6. Verification notes
 
 There is no build and no test suite in this repository to run: `main` is
 markdown, one issue template and one workflow. The single workflow,
